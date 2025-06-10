@@ -197,6 +197,8 @@ After running the query on the `DeviceFileEvents` table to check for any `.zip` 
 
 ## Conclusion
 
-Brute-force attacks will continue to be a mainstay in the modern cyber threat landscape. The vast trove of exposed credentials and stolen password lists will arm threat actors for the foreseeable future. Implementing security measures such as account lockout policies, multi-factor authentication, complex passwords, and the principle of least privilege are currently considered the absolute baseline standards for protecting against threat actors. Adopting basic security hygiene is essential to prevent businesses of all sizes from falling victim to common, yet effective, attacks.
+Uncovering a zero-day exploit followed by deploying ransomware puts many organisations in extremely difficult positions. Not only are they pressured to pay a hefty ransom, but they also scramble to find a solution to patch the exploit and possibly recover their encrypted data. Organisations that do not follow industry-standard security practices are bound to experience such incidents sooner or later. However, even organizations that lead in implementing best cybersecurity practices may still face formidable adversaries against whom they might lose.
+
+The important thing to remember is to ensure all bases are covered: maintain continuous monitoring, regularly update security controls, follow an incident response playbook diligently, and keep leadership promptly informed of the ongoing situation.
 
 
