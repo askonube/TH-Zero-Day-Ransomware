@@ -69,8 +69,6 @@ DeviceProcessEvents
 ```
 #### IoC 1: File Modification
 
-There were some files in the system that were modified from only having their original file extension to now having a `pwncrypt` extension that is prepended (i.e. 4145_ProjectList.csv -> 4145_ProjectList_pwncrypt.csv) to the .csv extension.
-
 Some files on the system were modified by having the `.pwncrypt` extension prepended to their original file extension `(e.g., 4145_ProjectList.csv -> 4145_ProjectList_pwncrypt.csv)`.
   - The newly created malicious files were also renamed, but there seemed to be no apparent modification in file size or the file name.
 
