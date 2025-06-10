@@ -90,6 +90,7 @@ The ransomware executes via PowerShell, encrypting files within the host’s Des
 
 <img width="359" alt="Pasted image 20250331233343" src="https://github.com/user-attachments/assets/f246ac98-786c-413e-9e9d-6088cb412728" />
 
+
 <img width="581" alt="Pasted image 20250331233724" src="https://github.com/user-attachments/assets/1667f076-0ea6-4fbc-8337-e303eb438f29" />
 
 #### *IoC 3: Persistence*
