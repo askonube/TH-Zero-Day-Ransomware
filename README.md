@@ -162,21 +162,21 @@ After running the query on the `DeviceFileEvents` table to check for any `.zip` 
 
 ### Actions Taken
 
-- Immediately disconnect the infected machine `(win-vm-mde)` from the network, including disabling internet access and any local network connections, to prevent lateral movement and further spread of the ransomware.
+- Immediately disconnected the infected machine `(win-vm-mde)` from the network, including disabling internet access and any local network connections, to prevent lateral movement and further spread of the ransomware.
 
-- Take disk images or snapshots of affected systems to preserve the current state for analysis and potential law enforcement collaboration. Also capture any volatile data for forensic investigation.
+- Took disk images or snapshots of affected systems to preserve the current state for analysis and potential law enforcement collaboration. Also captured any volatile data for forensic investigation.
 
-- Alert internal stakeholders including IT, security, legal, communications, and executive leadership
+- Alerted internal stakeholders including IT, security, legal, communications, and executive leadership
 
-- Remove or quarantine suspicious persistence artifacts such as `.lnk` shortcut files used by the ransomware to maintain foothold
+- Removed or quarantined suspicious persistence artifacts such as `.lnk` shortcut files used by the ransomware to maintain foothold
   
-- Run full antivirus and endpoint detection scans on infected hosts to remove ransomware binaries and related malware components
+- Ran full antivirus and endpoint detection scans on infected hosts to remove ransomware binaries and related malware components
 
-- Validate that all persistence mechanisms are eradicated before restoring systems.
+- Validated that all persistence mechanisms are eradicated before restoring systems.
 
-- Restore affected systems and data from secure, offline backups following a prioritized recovery plan.
+- Restored affected systems and data from secure, offline backups following a recovery plan.
 
-- Provide user training to increase awareness of ransomware delivery methods and suspicious file types (e.g., `.lnk` files)
+- Provided user training to increase awareness of ransomware delivery methods and suspicious file types (e.g., `.lnk` files)
 
 ## 6. Improvement
 
