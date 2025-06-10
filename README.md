@@ -67,14 +67,14 @@ DeviceProcessEvents
 | order by Timestamp desc
 | project Timestamp, DeviceName, ActionType, FileName,FileSize, ProcessCommandLine, InitiatingProcessCommandLine
 ```
-#### IoC 1: File Modification
+#### *IoC 1: File Modification*
 
 Some files on the system were modified by having the `.pwncrypt` extension prepended to their original file extension `(e.g., 4145_ProjectList.csv -> 4145_ProjectList_pwncrypt.csv)`.
   - The newly created malicious files were also renamed, but there seemed to be no apparent modification in file size or the file name.
 
 <img width="1184" alt="Pasted image 20250331232852" src="https://github.com/user-attachments/assets/660612c7-34bc-45b2-82a6-f704b2422227" />
 
-#### IoC 2: Process Creation
+#### *IoC 2: Process Creation*
 
 There were two process creations that took place around the time the `pwncrypt` files were created. 
   1. `cmd.exe: "cmd.exe" /c powershell.exe -ExecutionPolicy Bypass -File C:\programdata\pwncrypt.ps1`
@@ -92,7 +92,7 @@ The ransomware executes via PowerShell, encrypting files within the host’s Des
 
 <img width="581" alt="Pasted image 20250331233724" src="https://github.com/user-attachments/assets/1667f076-0ea6-4fbc-8337-e303eb438f29" />
 
-#### IoC 3: Persistence
+#### *IoC 3: Persistence*
 
 The strain of ransomware also created .lnk files (pwncrypt.lnk) stored in the path C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\pwncrypt.lnk. This is meant to remain in the host machine every time the user logs in, just in case that other related components are removed when eradicating the ransomware. When the user logs in again, the process tree will go as follows: winlogon.exe -> userinit.exe -> explorer.exe -> pwncrypt.lnk (this is the created file)
 
@@ -101,7 +101,7 @@ The ransomware strain also created `.lnk` files `(e.g., pwncrypt.lnk)` stored at
 <img width="498" alt="Pasted image 20250401001137" src="https://github.com/user-attachments/assets/026e8a34-34f9-4246-ae65-41c96b560ca0" />
 
 
-#### IoC 4: File Extraction
+#### *IoC 4: File Extraction*
 
 After running the query on the `DeviceFileEvents` table to check for any `.zip` files, no results indicated that compressed files were created or accessed. Based on this, we can reasonably conclude that no file compression or extraction activity involving `.zip` archives occurred on the host machine.
 
