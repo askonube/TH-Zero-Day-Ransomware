@@ -55,70 +55,57 @@ DeviceFileEvents
 
 ### Findings
 
-Several bad actors have been discovered attempting to log into the target machine.
-```kql
-DeviceLogonEvents
-| where DeviceName == "windows-target-1"
-| where LogonType has_any("Network", "Interactive", "RemoteInteractive", "Unlock")
-| where ActionType == "LogonFailed"
-| where isnotempty(RemoteIP)
-| summarize Attempts = count() by ActionType, DeviceName, RemoteIP
-| order by Attempts
-```
+Using the query below on the `DeviceProcessEvents` table, it was important to confirm that the new ransomware strain was associated with the specific indicators of compromise (IoCs) found on the logs. 
 
-![image](https://github.com/user-attachments/assets/118cc71a-2bd2-422c-9011-1490e67f2d9c)
-
-We then checked to see if the top 5 IP addresses that failed to login the most were able to successfully login.
 
 ```kql
-let AttemptedIPs = dynamic(["45.135.232.96", "185.39.19.71", "109.205.213.154", "118.107.45.60", "194.180.49.127"]);
-DeviceLogonEvents
-| where DeviceName == "windows-target-1"
-| where LogonType has_any("Network", "Interactive", "RemoteInteractive", "Unlock")
-| where ActionType == "LogonSuccess"
-| where RemoteIP has_any(AttemptedIPs)
+let VMName = "win-vm-mde";
+let specificTime = datetime(2025-03-31T07:46:16.8839143Z);
+DeviceProcessEvents
+| where Timestamp between ((specificTime - 5m) .. (specificTime + 20m))
+| where DeviceName == VMName
+| order by Timestamp desc
+| project Timestamp, DeviceName, ActionType, FileName,FileSize, ProcessCommandLine, InitiatingProcessCommandLine
 ```
+#### IoC 1: File Modification
 
-![image](https://github.com/user-attachments/assets/86d5e234-e993-48a8-a84d-a5bf9d63dc7a)
+There were some files in the system that were modified from only having their original file extension to now having a `pwncrypt` extension that is prepended (i.e. 4145_ProjectList.csv -> 4145_ProjectList_pwncrypt.csv) to the .csv extension.
 
-The only successful remote/network logons in the past 30 days was for the `labuser` account (2 times).
+Some files on the system were modified by having the `.pwncrypt` extension prepended to their original file extension `(e.g., 4145_ProjectList.csv -> 4145_ProjectList_pwncrypt.csv)`.
+  - The newly created malicious files were also renamed, but there seemed to be no apparent modification in file size or the file name.
 
-```kql
-DeviceLogonEvents
-| where DeviceName == "windows-target-1"
-| where LogonType == "Network"
-| where ActionType == "LogonSuccess"
-| where AccountName == "labuser"
-```
-![image](https://github.com/user-attachments/assets/48468c7b-e8d7-4907-9d34-ee756869c5d5)
+<img width="1184" alt="Pasted image 20250331232852" src="https://github.com/user-attachments/assets/660612c7-34bc-45b2-82a6-f704b2422227" />
 
-There were zero (0) failed logons for the `labuser` account, indicating that a brute force attempt for this account didn't take place, and a one-time password guess is unlikely.
+#### IoC 2: Process Creation
 
-```kql
-DeviceLogonEvents
-| where DeviceName == "windows-target-1"
-| where LogonType == "Network"
-| where ActionType == "LogonFailed"
-| where AccountName == "labuser"
-```
-![image](https://github.com/user-attachments/assets/c9c7a14d-2733-4aa5-97dd-f3de82c86078)
+There were two process creations that took place around the time the `pwncrypt` files were created. 
+  1. `cmd.exe: "cmd.exe" /c powershell.exe -ExecutionPolicy Bypass -File C:\programdata\pwncrypt.ps1`
+  2. `powershell.exe: powershell.exe  -ExecutionPolicy Bypass -File C:\programdata\pwncrypt.ps1`
 
-We checked all of the successful login IP addresses for the `labuser` account to see if any of them were unusual or from an unexpected location. The IP address corresponded to their accurate location and was deemed safe. 
-
-```kql
-DeviceLogonEvents
-| where DeviceName == "windows-target-1"
-| where LogonType == "Network"
-| where ActionType == "LogonSuccess"
-| where AccountName == "labuser"
-| summarize LoginCount = count() by DeviceName, ActionType, AccountName, RemoteIP
-```
-
-![image](https://github.com/user-attachments/assets/a9d2fcbd-aa61-46e0-b58d-d6901906660e)
+<img width="1153" alt="Pasted image 20250331232808" src="https://github.com/user-attachments/assets/ee81115d-5002-4de2-8dad-37c991150988" />
 
 
-Though the device was exposed to the internet and clear brute force attempts took place, there's no evidence of any brute force success or unauthorised access from the legitimate account `labuser`. 
+Both `cmd.exe` and `powershell.exe` were used to run scripts that bypass the PowerShell execution policy, a common defense evasion technique allowing scripts to execute without restrictions or persistent configuration changes.
 
+
+The ransomware executes via PowerShell, encrypting files within the host’s Desktop directory and leaving instructions for the victim to decrypt their files. Unlike typical ransom notes delivered as `.txt` or `.html` files, this strain uses a `.lnk` shortcut file named `__________decryption-instructions.lnk` that points directly to the ransom note. When clicked, this shortcut opens the instructions, which inform the victim to send bitcoin to a specified address to obtain the decryption key. This use of a shortcut file is an uncommon but straightforward method to ensure the ransom note is accessible on the victim's Desktop.
+
+<img width="359" alt="Pasted image 20250331233343" src="https://github.com/user-attachments/assets/f246ac98-786c-413e-9e9d-6088cb412728" />
+
+<img width="581" alt="Pasted image 20250331233724" src="https://github.com/user-attachments/assets/1667f076-0ea6-4fbc-8337-e303eb438f29" />
+
+#### IoC 3: Persistence
+
+The strain of ransomware also created .lnk files (pwncrypt.lnk) stored in the path C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\pwncrypt.lnk. This is meant to remain in the host machine every time the user logs in, just in case that other related components are removed when eradicating the ransomware. When the user logs in again, the process tree will go as follows: winlogon.exe -> userinit.exe -> explorer.exe -> pwncrypt.lnk (this is the created file)
+
+The ransomware strain also created `.lnk` files `(e.g., pwncrypt.lnk)` stored at the path `C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\pwncrypt.lnk`. These shortcut files are designed to persist on the host machine across user logins, ensuring that related ransomware components can execute again even if some are removed during eradication. Upon user login, the process execution chain follows this sequence: `winlogon.exe → userinit.exe → explorer.exe → pwncrypt.lnk` (the created shortcut file).
+
+<img width="498" alt="Pasted image 20250401001137" src="https://github.com/user-attachments/assets/026e8a34-34f9-4246-ae65-41c96b560ca0" />
+
+
+#### IoC 4: File Extraction
+
+After running the query on the `DeviceFileEvents` table to check for any `.zip` files, no results indicated that compressed files were created or accessed. Based on this, we can reasonably conclude that no file compression or extraction activity involving `.zip` archives occurred on the host machine.
 
 ## 4. Investigation
 
