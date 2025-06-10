@@ -94,8 +94,6 @@ The ransomware executes via PowerShell, encrypting files within the host’s Des
 
 #### *IoC 3: Persistence*
 
-The strain of ransomware also created .lnk files (pwncrypt.lnk) stored in the path C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\pwncrypt.lnk. This is meant to remain in the host machine every time the user logs in, just in case that other related components are removed when eradicating the ransomware. When the user logs in again, the process tree will go as follows: winlogon.exe -> userinit.exe -> explorer.exe -> pwncrypt.lnk (this is the created file)
-
 The ransomware strain also created `.lnk` files `(e.g., pwncrypt.lnk)` stored at the path `C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\pwncrypt.lnk`. These shortcut files are designed to persist on the host machine across user logins, ensuring that related ransomware components can execute again even if some are removed during eradication. Upon user login, the process execution chain follows this sequence: `winlogon.exe → userinit.exe → explorer.exe → pwncrypt.lnk` (the created shortcut file).
 
 <img width="498" alt="Pasted image 20250401001137" src="https://github.com/user-attachments/assets/026e8a34-34f9-4246-ae65-41c96b560ca0" />
