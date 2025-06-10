@@ -160,35 +160,38 @@ After running the query on the `DeviceFileEvents` table to check for any `.zip` 
 ## 5. Response
 
 ### Actions Taken
-- Immediately restrict internet exposure by limiting or removing public internet-facing configuration of the VM `windows-target-1` unless absolutely necessary.
 
-- Implement firewall rules or network security groups (NSGs), if operating in a cloud environment, to restrict inbound traffic to only trusted IP addresses or networks.
+- Immediately disconnect the infected machine `(win-vm-mde)` from the network, including disabling internet access and any local network connections, to prevent lateral movement and further spread of the ransomware.
+
+- Take disk images or snapshots of affected systems to preserve the current state for analysis and potential law enforcement collaboration. Also capture any volatile data for forensic investigation.
+
+- Alert internal stakeholders including IT, security, legal, communications, and executive leadership
+
+- Remove or quarantine suspicious persistence artifacts such as `.lnk` shortcut files used by the ransomware to maintain foothold
   
-- Implement strong, unique passwords and enable multi-factor authentication (MFA) for all user accounts.
+- Run full antivirus and endpoint detection scans on infected hosts to remove ransomware binaries and related malware components
 
-- Enable account lockout policies after a configurable number of failed login attempts to mitigate brute-force attacks.
+- Validate that all persistence mechanisms are eradicated before restoring systems.
 
-- Continuously monitor login attempts and network traffic for abnormal patterns
+- Restore affected systems and data from secure, offline backups following a prioritized recovery plan.
 
-- Utilise intrusion detection/prevention systems (IDS/IPS) and endpoint protection tools to detect and block malicious activity
-
-- Apply the principle of least privilege for accounts and services to minimise potential damage from compromised credentials.
+- Provide user training to increase awareness of ransomware delivery methods and suspicious file types (e.g., `.lnk` files)
 
 ## 6. Improvement
 
 ### Prevention:
-- **Reduce Internet Exposure**: Limit or eliminate direct internet-facing access to critical VMs such as windows-target-1. Use VPNs, jump servers, or Just-in-Time (JIT) access to securely control remote connectivity.
-- **Implement Account Lockout Policies**: Configure account lockout thresholds to block accounts after a set number of failed login attempts.
-- **Enforce Strong Authentication**: Require complex passwords and enable multi-factor authentication (MFA) for all user accounts, especially those with remote access privileges.
-- **Least Privilege Access**: Apply the principle of least privilege to user accounts and service permissions to minimize risk if credentials are compromised.
+- **Strengthen Endpoint Protection**: Configure endpoint protection to alert on or block execution of unauthorized `.ps1` scripts and suspicious `.lnk` files.
+- **Monitor and Investigate Persistence Mechanisms**: Monitor creation and execution of `.lnk` shortcut files, especially in user profile directories such as `AppData\Roaming\Microsoft\Windows\Recent\`.
+- **Enhance Detection of File Modification**: Monitor file system events for mass file modifications, particularly addition of unusual extensions like `.pwncrypt`.
+- **Backup and Recovery**: Follow the 3-2-1 rule to enable rapid restoration without paying ransom.
+- **User Awareness and Training**:  Educate users on recognizing suspicious files (e.g., `.lnk` shortcuts) and phishing attempts to reduce initial infection risk.
+
 
 ### Threat Hunting:
--  Continuously analyze authentication logs for patterns of failed login attempts from external IPs to detect brute-force activity early.
-- Investigate accounts with multiple failed attempts followed by successful logins to identify potential credential compromise.
-- Regularly review and inventory VMs exposed to the internet. Prioritize threat hunting on these assets due to higher risk exposure.
-- Hunt for unusual remote service usage or authentication events within the shared services cluster that may indicate lateral movement attempts.
-- Integrate external threat intelligence feeds to identify known malicious IP addresses attempting access and proactively block them.
-- Establish normal login and network behavior baselines for critical accounts like labuser to quickly spot anomalies.
+- Hunt for execution of PowerShell scripts with bypass flags and suspicious command lines in process logs (DeviceProcessEvents).
+- Search for creation and execution of `.lnk` files in user profile directories, especially those executed during login sequences.
+- Look for mass file modifications, especially files with unusual extensions like `.pwncrypt`.
+- Investigate unusual process chains involving `winlogon.exe`, `userinit.exe`, and `explorer.exe` launching unknown shortcuts or scripts.
 
 ---
 
