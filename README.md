@@ -105,32 +105,55 @@ After running the query on the `DeviceFileEvents` table to check for any `.zip` 
 
 ## 4. Investigation
 
-**Suspicious Activity Origin**: The VM `windows-target-1` was exposed to the public internet for several days, resulting in multiple failed login attempts from external IP addresses, indicating potential brute-force attack activity against this internet-facing host.
+**PowerShell Execution:** The PwnCrypt ransomware was executed on the compromised machine `win-vm-mde` using a PowerShell script named `pwncrypt.ps1`. The adversary bypassed PowerShell execution policies with the command:  
+`powershell.exe -ExecutionPolicy Bypass -File C:\programdata\pwncrypt.ps1`, enabling the ransomware payload to run unrestricted (T1059.001: PowerShell).
 
-**Potential Brute-Froce Login Attempts**: Numerous failed login attempts from external IPs were observed targeting the exposed VM, consistent with brute-force techniques aimed at gaining unauthorized access (T1110: Brute Force). Despite these attempts, no successful brute-force login was detected for the legitimate account `labuser`.
+**Execution Policy Bypass:** The use of the `-ExecutionPolicy Bypass` flag represents a common defense evasion technique, allowing script execution without permanently modifying system settings. This was confirmed by process command line data in the `DeviceProcessEvents` logs (T1562.001: Modify Execution Policy).
 
-**Risk of Initial Access and Lateral Movement**: If any brute-force attempts had succeeded, attackers could have gained initial access to the shared services environment, which includes critical infrastructure such as DNS, Domain Services, and DHCP. This access could facilitate lateral movement within the network to expand control (T1021: Remote Services).
+**File Encryption for Impact:** The ransomware encrypted files in targeted directories such as `C:\Users\Public\Desktop`, applying AES-256 encryption and modifying file extensions by prepending `.pwncrypt` (e.g., `4145_ProjectList.csv` became `4145_ProjectList_pwncrypt.csv`). File modification events in the `DeviceFileEvents` table corroborate this activity (T1486: Data Encrypted for Impact).
 
-**Legitimate Account Behaviour**: The account "labuser" successfully logged in twice via network logons in the past 30 days, with no failed attempts and all logins originating from expected IP addresses, confirming no malicious activity or compromise associated with this account.
-    
+**Persistence via Shortcut Files:** To maintain persistence, the ransomware created `.lnk` shortcut files like `pwncrypt.lnk` in the path `C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\`. These shortcuts are executed automatically on user login following the process chain:  
+`winlogon.exe → userinit.exe → explorer.exe → pwncrypt.lnk` (T1547.001: Boot or Logon Autostart Execution).
+
+**File System Modification for Persistence:** The creation and placement of `.lnk` files modifies the Windows file system to establish persistent execution points for the ransomware components upon user logon (T1543.003: Create or Modify System Process).
+
+**Masquerading through Shortcut Files:** The ransomware also employs masquerading by creating `.lnk` files such as `__________decryption-instructions.lnk` that appear as benign shortcuts but serve as delivery mechanisms for the ransom note. This technique increases victim interaction while evading suspicion (T1036: Masquerading).
+
+**Manual Command and Control:** The ransom note instructs victims to send bitcoin to a specified wallet address, representing a manual, out-of-band command and control mechanism. This approach relies on victim-initiated contact rather than automated network-based C2 channels (T1095: Non-Application Layer Protocol).
+
+**Absence of File Extraction Activity:** Queries on the `DeviceFileEvents` table revealed no evidence of `.zip` file creation or access, indicating no file compression or extraction activities took place on the host.
+
+
+
 ### MITRE ATT&CK TTPs
 
-1. **Tactic: Initial Access (TA0001)** 
+1. **Tactic: Execution (TA0002)** 
     
-    - **Technique: Brute Force (T1110)** Adversaries attempt to gain access by guessing credentials, often targeting systems without account lockout mechanisms. Logs from `DeviceLogonEvents` show multiple failed login attempts (ActionType == "LogonFailed") from external IPs (e.g., 45.135.232.96, 185.39.19.71) targeting "windows-target-1," consistent with brute-force behavior.
+    - **Technique: PowerShell (T1059.001)** Adversaries used PowerShell to execute the `pwncrypt.ps1` script, bypassing execution policies with the command `powershell.exe -ExecutionPolicy Bypass -File C:\programdata\pwncrypt.ps1`. This allowed the ransomware payload to run without restrictions, as observed in the `DeviceProcessEvents` logs showing `powershell.exe` and `cmd.exe` process creations.
 
-2. **Tactic: Credential Access (TA0006)** 
+2. **Tactic: Defence Evasion (TA0005)** 
     
-    - **Technique: Brute Force (T1110)** The repeated failed login attempts indicate attempts to acquire valid credentials through brute force.
+    - **Technique: Modify Execution Policy (T1562.001)** The ransomware bypassed PowerShell execution restrictions using the `-ExecutionPolicy Bypass` flag, a common defence evasion technique to execute scripts without altering persistent system configurations, as seen in the process command lines in `DeviceProcessEvents`.
         
-        
-3. **Tactic: Initial Access (TA0001)** 
+3. **Tactic: Defence Evasion (TA0005)**
     
-    - **Technique: Exploit Public-Facing Application (T1190)** Adversaries may exploit vulnerabilities in internet-facing applications to gain initial access. The VM "windows-target-1," hosting critical services (DNS, DHCP, Domain Services), was exposed to the internet (IsInternetFacing == true until 2025-06-09T11:06:17.2711518Z), making it a potential target for exploitation. While no direct evidence of application-specific exploits (e.g., CVEs or anomalous service behavior) was found in the logs, the internet exposure of these services increases the risk of such attacks, particularly if unpatched or misconfigured.
+    - **Technique: Masquerading (T1036)**  The ransomware creates `.lnk` files, such as `__________decryption-instructions.lnk`, which masquerade as benign shortcut files but serve as a delivery mechanism for the ransom note. This technique involves modifying the file system to create files that appear legitimate to users, increasing the likelihood that victims will interact with the ransom note. The use of `.lnk` files to point to malicious instructions is a form of masquerading to evade detection and user suspicion.
   
-4. **Tactic: Lateral Movement (TA0008)** 
+4. **Tactic: Impact (TA0040)**  
     
-    - **Technique: Remote Services (T1021)** Successful compromise of the exposed VM could enable attackers to move laterally through the shared services cluster.
+    - **Technique: Data Encrypted for Impact (T1486)**  The ransomware encrypted files in targeted directories (e.g., `C:\Users\Public\Desktop`) using AES-256 encryption, appending the `.pwncrypt` extension to affected files (e.g., `4145_ProjectList_pwncrypt.csv`). This was confirmed by file modification events in the `DeviceFileEvents` table.
+  
+5. **Tactic: Persistence (TA0003)** 
+    
+    - **Technique: Boot or Logon Autostart Execution (T1547.001)** The creation of `.lnk` files (e.g., `pwncrypt.lnk`) in the `C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\` directory ensures persistence. These shortcut files are executed upon user login through the chain `winlogon.exe → userinit.exe → explorer.exe → pwncrypt.lnk`, as observed in the process execution logs.
+  
+6. **Tactic: Persistence (TA0003)**
+    
+    - **Technique: Create or Modify System Process: Windows File System (T1543.003)**  The creation of `.lnk` shortcut files `(e.g., pwncrypt.lnk` in `C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\)` involves modifying the file system to ensure persistence. These shortcut files are crafted to execute ransomware components upon user login, effectively modifying the system’s file structure to maintain malicious functionality. This aligns with creating or modifying files to establish persistent execution mechanisms.
+  
+7.  **Tactic: Command and Control (TA0011)** 
+    
+    - **Technique: Non-Application Layer Protocol (T1095)** This technique covers communication over non-standard or non-application layer protocols, such as manual cryptocurrency transactions. The ransom note’s instruction to send bitcoin to a wallet address represents a manual, out-of-band C2 mechanism where the adversary receives payment and may provide a decryption key via an external channel (e.g., email or a dark web portal). This better reflects the ransomware’s operation, as it relies on victim-initiated contact rather than automated network-based C2.
 
 ---
 
