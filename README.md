@@ -107,15 +107,15 @@ After running the query on the `DeviceFileEvents` table to check for any `.zip` 
 ## 4. Investigation
 
 
-- The PwnCrypt ransomware was executed on the compromised machine win-vm-mde using a PowerShell script named pwncrypt.ps1. The attacker ran the script with a command that bypassed PowerShell execution policies, allowing the ransomware to run without restrictions.
+- The PwnCrypt ransomware was executed on the compromised machine `win-vm-mde` using a PowerShell script named `pwncrypt.ps1`. The attacker ran the script with a command that bypassed PowerShell execution policies, allowing the ransomware to run without restrictions.
 
-- Analysis of process command lines from DeviceProcessEvents logs confirmed the use of the -ExecutionPolicy Bypass flag, a known method to evade PowerShell restrictions without changing system-wide settings.
+- Analysis of process command lines from `DeviceProcessEvents` logs confirmed the use of the `-ExecutionPolicy Bypass` flag, a known method to evade PowerShell restrictions without changing system-wide settings.
 
-- The ransomware encrypted files in targeted directories such as C:\Users\Public\Desktop, applying AES-256 encryption and modifying file extensions by appending .pwncrypt. File modification events in DeviceFileEvents logs corroborate this encryption activity.
+- The ransomware encrypted files in targeted directories such as `C:\Users\Public\Desktop`, applying AES-256 encryption and modifying file extensions by appending .pwncrypt. File modification events in `DeviceFileEvents` logs corroborate this encryption activity.
 
-- To maintain persistence, the ransomware created shortcut files (.lnk) like pwncrypt.lnk in the user’s Recent folder. These shortcuts are automatically executed during user login via a process chain starting from winlogon.exe through explorer.exe.
+- To maintain persistence, the ransomware created shortcut files `(.lnk)` like `pwncrypt.lnk` in the user’s `Recent` folder. These shortcuts are automatically executed during user login via a process chain starting from `winlogon.exe` through `explorer.exe`.
 
-- These shortcut files also serve as a masquerading technique, appearing as benign shortcuts (e.g., __________decryption-instructions.lnk) but delivering ransom instructions to the victim.
+- These shortcut files also serve as a masquerading technique, appearing as benign shortcuts `(e.g., __________decryption-instructions.lnk)` but delivering ransom instructions to the victim.
 
 - The ransom note instructs victims to manually send bitcoin to a specified wallet address, indicating a manual command and control approach rather than automated network communications.
 
