@@ -111,7 +111,7 @@ After running the query on the `DeviceFileEvents` table to check for any `.zip` 
 
 - Analysis of process command lines from `DeviceProcessEvents` logs confirmed the use of the `-ExecutionPolicy Bypass` flag, a known method to evade PowerShell restrictions without changing system-wide settings.
 
-- The ransomware encrypted files in targeted directories such as `C:\Users\Public\Desktop`, applying AES-256 encryption and modifying file extensions by appending .pwncrypt. File modification events in `DeviceFileEvents` logs corroborate this encryption activity.
+- The ransomware encrypted files in targeted directories such as `C:\Users\Public\Desktop`, applying AES-256 encryption and modifying file extensions by appending `.pwncrypt`. File modification events in `DeviceFileEvents` logs corroborate this encryption activity.
 
 - To maintain persistence, the ransomware created shortcut files `(.lnk)` like `pwncrypt.lnk` in the user’s `Recent` folder. These shortcuts are automatically executed during user login via a process chain starting from `winlogon.exe` through `explorer.exe`.
 
