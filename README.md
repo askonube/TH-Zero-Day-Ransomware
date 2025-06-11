@@ -106,25 +106,20 @@ After running the query on the `DeviceFileEvents` table to check for any `.zip` 
 
 ## 4. Investigation
 
-**PowerShell Execution:** The PwnCrypt ransomware was executed on the compromised machine `win-vm-mde` using a PowerShell script named `pwncrypt.ps1`. The adversary bypassed PowerShell execution policies with the command:  
-`powershell.exe -ExecutionPolicy Bypass -File C:\programdata\pwncrypt.ps1`, enabling the ransomware payload to run unrestricted (T1059.001: PowerShell).
 
-**Execution Policy Bypass:** The use of the `-ExecutionPolicy Bypass` flag represents a common defense evasion technique, allowing script execution without permanently modifying system settings. This was confirmed by process command line data in the `DeviceProcessEvents` logs (T1562.001: Modify Execution Policy).
+- The PwnCrypt ransomware was executed on the compromised machine win-vm-mde using a PowerShell script named pwncrypt.ps1. The attacker ran the script with a command that bypassed PowerShell execution policies, allowing the ransomware to run without restrictions.
 
-**File Encryption for Impact:** The ransomware encrypted files in targeted directories such as `C:\Users\Public\Desktop`, applying AES-256 encryption and modifying file extensions by prepending `.pwncrypt` (e.g., `4145_ProjectList.csv` became `4145_ProjectList_pwncrypt.csv`). File modification events in the `DeviceFileEvents` table corroborate this activity (T1486: Data Encrypted for Impact).
+- Analysis of process command lines from DeviceProcessEvents logs confirmed the use of the -ExecutionPolicy Bypass flag, a known method to evade PowerShell restrictions without changing system-wide settings.
 
-**Persistence via Shortcut Files:** To maintain persistence, the ransomware created `.lnk` shortcut files like `pwncrypt.lnk` in the path `C:\Users\ylavnu\AppData\Roaming\Microsoft\Windows\Recent\`. These shortcuts are executed automatically on user login following the process chain:  
-`winlogon.exe → userinit.exe → explorer.exe → pwncrypt.lnk` (T1547.001: Boot or Logon Autostart Execution).
+- The ransomware encrypted files in targeted directories such as C:\Users\Public\Desktop, applying AES-256 encryption and modifying file extensions by appending .pwncrypt. File modification events in DeviceFileEvents logs corroborate this encryption activity.
 
-**File System Modification for Persistence:** The creation and placement of `.lnk` files modifies the Windows file system to establish persistent execution points for the ransomware components upon user logon (T1543.003: Create or Modify System Process).
+- To maintain persistence, the ransomware created shortcut files (.lnk) like pwncrypt.lnk in the user’s Recent folder. These shortcuts are automatically executed during user login via a process chain starting from winlogon.exe through explorer.exe.
 
-**Masquerading through Shortcut Files:** The ransomware also employs masquerading by creating `.lnk` files such as `__________decryption-instructions.lnk` that appear as benign shortcuts but serve as delivery mechanisms for the ransom note. This technique increases victim interaction while evading suspicion (T1036: Masquerading).
+- These shortcut files also serve as a masquerading technique, appearing as benign shortcuts (e.g., __________decryption-instructions.lnk) but delivering ransom instructions to the victim.
 
-**Manual Command and Control:** The ransom note instructs victims to send bitcoin to a specified wallet address, representing a manual, out-of-band command and control mechanism. This approach relies on victim-initiated contact rather than automated network-based C2 channels (T1095: Non-Application Layer Protocol).
+- The ransom note instructs victims to manually send bitcoin to a specified wallet address, indicating a manual command and control approach rather than automated network communications.
 
-**Absence of File Extraction Activity:** Queries on the `DeviceFileEvents` table revealed no evidence of `.zip` file creation or access, indicating no file compression or extraction activities took place on the host.
-
-
+- No evidence of file compression or extraction (e.g., .zip files) was found, indicating the ransomware did not perform file archiving on the host.
 
 ### MITRE ATT&CK TTPs
 
